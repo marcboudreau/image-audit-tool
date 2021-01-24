@@ -98,9 +98,7 @@ exit_code=0
         # Generate the verify.env file which defines environment variables used by
         # the audit.sh script to ignore justified failures.
         if [ -f /verify/exceptions/exceptions.json ]; then
-            jq -r 'keys[]' /verify/exceptions/exceptions.json 2> /dev/null | sed -e 's/^/SKIP_/' -e 's/$/=x/' -e 's/\./_/g' > /tmp/verify.env
-        else
-            touch /tmp/verify.env
+            jq -r 'keys[]' /verify/exceptions/exceptions.json 2> /dev/null > /tmp/verify.env
         fi
 
         ip_address=$(terraform output -no-color -json instance_ip | jq -r '.') || exit_code=4
@@ -112,7 +110,10 @@ exit_code=0
                 if ssh_ready $ip_address ${SSH_PORT:-"22"} ; then
                     # Upload audit.sh and /tmp/verify.env
                     scp -q -i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /verify/audit.sh "$ssh_username@$ip_address:/tmp/audit.sh"
-                    scp -q -i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /tmp/verify.env "$ssh_username@$ip_address:/tmp/verify.env"
+
+                    if [ -f /tmp/verify.env ]; then
+                        scp -q -i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /tmp/verify.env "$ssh_username@$ip_address:/tmp/exceptions"
+                    fi
 
                     # Adjust permissions and ownership of the audit.sh file and run it.
                     ssh -i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o LogLevel=ERROR "$ssh_username@$ip_address" "sudo chmod 0755 /tmp/audit.sh"

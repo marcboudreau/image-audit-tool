@@ -8,12 +8,15 @@ set -eu${DEBUG+x}o pipefail
 #
 function print_usage {
     echo "Usage:"
-    echo "  <cloud> <image_identifier>"
+    echo "  <cloud> <image_identifier> <ignored_controls>"
     echo ""
     echo "Where:"
     echo "  <cloud>             The canonical name of the cloud provider where the"
     echo "                      candidate image exists."
     echo "  <image_identifier>  The unique identifier for the candidate image to test."
+    echo "  <ignored_controls>  Optional. A comma-separated list of control numbers to"
+    echo "                      ignore if they fail."
+    echo "                      e.g. 1.1,2.3.4,3.1.1"
     echo ""
     echo "Environment Variables:"
     echo "  CLOUD_LOCATION      The cloud provider location (zone or region) where the"
@@ -78,6 +81,9 @@ fi
 
 export TF_VAR_image_cloud=$cloud
 export TF_VAR_image_identifier=${2:?"Error: an image identifier must be provided."}
+
+ignored_controls=${3:-}
+
 export TF_VAR_instance_location=${CLOUD_LOCATION:?"Error: an appropriate cloud provider location must be provided via the CLOUD_LOCATION environment variable."}
 export TF_VAR_vpc_identifier=${VPC_IDENTIFIER-""}
 
@@ -92,40 +98,31 @@ terraform init -input=false -upgrade
 exit_code=0
 (
     # Run Terraform to launch the test Instance.
-    terraform apply -input=false -auto-approve || exit_code=2
+    terraform apply -input=false -auto-approve || exit 1
 
-    if [ $exit_code -eq 0 ]; then
-        # Generate the verify.env file which defines environment variables used by
-        # the audit.sh script to ignore justified failures.
-        if [ -f /verify/exceptions/exceptions.json ]; then
-            jq -r 'keys[]' /verify/exceptions/exceptions.json 2> /dev/null | sed -e 's/^/SKIP_/' -e 's/$/=x/' -e 's/\./_/g' > /tmp/verify.env
-        else
-            touch /tmp/verify.env
-        fi
+    if [ $ignored_controls ]; then
+        echo "$ignored_controls" | sed 's/,/\n/g' > /tmp/exceptions
+    fi
+        
+    ip_address=$(terraform output -no-color -json instance_ip | jq -r '.') || exit 1
+    ssh_username=$(terraform output -no-color -json ssh_username | jq -r '.') || exit 1
 
-        ip_address=$(terraform output -no-color -json instance_ip | jq -r '.') || exit_code=4
-        if [ $exit_code -eq 0 ]; then
-            ssh_username=$(terraform output -no-color -json ssh_username | jq -r '.') || exit_code=8
+    # Blocks execution until the SSH port is ready on the specified IP address.
+    ssh_ready $ip_address ${SSH_PORT:-"22"} || exit 1
 
-            if [ $exit_code -eq 0 ]; then
-                # Wait for instance to be provisioned and SSH to become available
-                if ssh_ready $ip_address ${SSH_PORT:-"22"} ; then
-                    # Upload audit.sh and /tmp/verify.env
-                    scp -q -i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /verify/audit.sh "$ssh_username@$ip_address:/tmp/audit.sh"
-                    scp -q -i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /tmp/verify.env "$ssh_username@$ip_address:/tmp/verify.env"
+    # Upload audit.sh and /tmp/verify.env
+    scp -q -i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /verify/audit.sh "$ssh_username@$ip_address:/tmp/audit.sh"
 
-                    # Adjust permissions and ownership of the audit.sh file and run it.
-                    ssh -i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o LogLevel=ERROR "$ssh_username@$ip_address" "sudo chmod 0755 /tmp/audit.sh"
-                    ssh -i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o LogLevel=ERROR "$ssh_username@$ip_address" "sudo chown root:root /tmp/audit.sh"
-
-                    # Run the audit.sh script
-                    ssh -i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o LogLevel=ERROR "$ssh_username@$ip_address" "sudo bash /tmp/audit.sh" || exit_code=16
-                fi
-            fi
-        fi
+    if [ -f /tmp/exceptions ]; then
+        scp -q -i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /tmp/exceptions "$ssh_username@$ip_address:/tmp/exceptions"
     fi
 
-    exit $exit_code
+    # Adjust permissions and ownership of the audit.sh file and run it.
+    ssh -i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o LogLevel=ERROR "$ssh_username@$ip_address" "sudo chmod 0755 /tmp/audit.sh"
+    ssh -i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o LogLevel=ERROR "$ssh_username@$ip_address" "sudo chown root:root /tmp/audit.sh"
+
+    # Run the audit.sh script
+    ssh -i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o LogLevel=ERROR "$ssh_username@$ip_address" "sudo bash /tmp/audit.sh" || exit 1
 ) || exit_code=1
 
 terraform destroy -auto-approve || true

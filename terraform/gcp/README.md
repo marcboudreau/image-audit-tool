@@ -22,7 +22,7 @@ The Google Cloud Platform also requires a project identifier to be set.  This is
 
 ### Volume Mounts
 
-In addition to the exceptions file, a volume mount is needed to provide access to the Google Cloud Platform credentials stored on the host system, when using Google Cloud Platform.
+When using Google Cloud Platform, a volume mount is needed to provide access to the Google Cloud Platform credentials stored on the host system.
 
 Those credentials should be generated ahead of time using the following command:
 ```

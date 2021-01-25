@@ -2,21 +2,22 @@
 set -e
 
 failures=0
+exceptions_file_present=0
+
+if [ -f /tmp/exceptions ]; then
+    exceptions_file_present=1
+fi
 
 function report {
-    skip_var=SKIP_$(echo $1 | tr '.' '_')
-    if echo ${!SKIP_*} | grep -q $skip_var; then
-        echo "$1 SKIPPED"
+    local control_number=$1
+
+    if [ $exceptions_file_present -ne 0 ] && grep -q "^$control_number$" /tmp/exceptions ; then
+        echo "$control_number SKIPPED"
     else
-        echo "$1 FAILED"
+        echo "$control_number FAILED"
         failures=$(expr $failures + 1)
     fi
 }
-
-if [ -f /tmp/verify.env ]; then
-    . /tmp/verify.env
-fi
-
 
 # CIS 1.1.1.1
 (

@@ -1,7 +1,5 @@
 FROM alpine:latest
 
-VOLUME [ "/verify/exceptions" ]
-
 RUN apk --no-cache add openssh-keygen jq openssh-client
 
 COPY --from=hashicorp/terraform:0.14.4 /bin/terraform /bin/terraform

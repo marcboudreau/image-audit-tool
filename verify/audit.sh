@@ -11,7 +11,7 @@ fi
 function report {
     local control_number=$1
 
-    if [ $exceptions_file_present -ne 0 ] && [ grep -q "^$control_number$" /tmp/exceptions ]; then
+    if [ $exceptions_file_present -ne 0 ] && grep -q "^$control_number$" /tmp/exceptions ; then
         echo "$control_number SKIPPED"
     else
         echo "$control_number FAILED"

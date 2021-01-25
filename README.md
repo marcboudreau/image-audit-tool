@@ -16,19 +16,7 @@ The audit script executes a series of tests organized as controls.  When the tes
 
 ## Exceptions
 
-The tested image is most likely not able to meet every single control in the audit script. The exception file provides the ability to mark specific controls as ignored controls. An image is considered as having passed the audit if all controls either passed or were skipped (*i.e. no controls were marked as **FAILED***).
-
-The exceptions file is a JSON encoded document with the following structure:
-
-```json
-{
-    "control_number": "justification statement"
-}
-```
-
-Each key in the top-level object is a control number that will be ignored in the audit script.  The value associated with that key is simply a justification of why the control is being ignored.  The justification statement is not used by this tool.
-
-The exceptions file must be mounted as a volume into the container.  See the **Volume Mounts** section below.
+The tested image is most likely not able to meet every single control in the audit script. A set of control numbers to ignore can be specified when invoking the tool. 
 
 ## Supported Platforms
 
@@ -50,6 +38,7 @@ The following two command arguments must always be provided regardless of the ta
 
 * `<cloud>` - The canonical name of the cloud provider
 * `<image_identifier>` - The unique identifier for the machine image being tested
+8 `<ignored_controls>` - (Optional) A comma-separated list of control numbers to ignore failures
 
 ### Environment Variables
 
@@ -62,18 +51,14 @@ Some cloud providers may require additional environment variables in the form **
 
 ### Volume Mounts
 
-The tool also requires access to various directories on the host system.  In order to provide access to those directories, they must be mounted as volumes into the Docker container.
-
-Regardless of target cloud provider, an exceptions file must be mounted to the path `/verify/exceptions/exceptions.json` inside the Docker container.
-
-Some cloud providers may require additional volumes to provide credentials needed to launch and destroy the virtual instance.  Refer to the cloud provider specific README page for details.
+When using the tool with some cloud providers, additional files from the host system are needed. In order to provide access to those files, their parent directory must be mounted as a volume into the Docker container. Refer to the cloud provider specific README page for details.
 
 ### Docker Command
 
 As previously mentioned, this tool must be run in a Docker container.  That can be done with the following command:
 
 ```
-$ docker run -it --rm -v $HOME/.config/gcloud:/root/.config/gcloud:ro -v $HOME/image/exceptions.json:/verify/exceptions/exceptions.json:ro -e CLOUD_LOCATION=us-central1-a -e TF_VAR_gcp_project=my-gcp-project marcboudreau/image-audit-tool:0.1.0 gcp my-image
+$ docker run -it --rm -v $HOME/.config/gcloud:/root/.config/gcloud:ro -e CLOUD_LOCATION=us-central1-a -e TF_VAR_gcp_project=my-gcp-project marcboudreau/image-audit-tool:0.1.0 gcp my-image 1.1.1,2.2.2
 ```
 
 Disecting the above command, we find...
@@ -81,9 +66,9 @@ Disecting the above command, we find...
 * `-it` - Allocates a pseudo-TTY and keeps STDIN open even if it's not attached
 * `--rm` - Automatically removes the container after it is stopped
 * `-v $HOME/.config/gcloud:/root/.config/gcloud:ro` - Mounts the host's `$HOME/.config/gcloud` directory as a read-only volume in the container at `/root/.config/gcloud`
-* `-v $HOME/image/exceptions.json:/mnt/exceptions.json:ro` - Mounts the host's `$HOME/image/exceptions.json` file as a read-only volume in the container at `/mnt/exceptions.json`
 * `-e CLOUD_LOCATION=us-central1-a` - Sets the value `us-central1-a` to the environment variable `CLOUD_LOCATION` in the container
 * `-e TF_VAR_gcp_project=my-gcp-project` - Sets the value `my-gcp-project` to the environment variable `TF_VAR_gcp_project` in the container
 * `marcboudreau/image-audit-tool:0.1.0` - Specifies the Docker image to use for the container
 * `gcp` - The target cloud provider
 * `my-image` - The unique image identifier
+* `1.1.1,2.2.2` - The set of controls to ignore: 1.1.1 and 2.2.2

@@ -6,7 +6,7 @@ The tool is dockerized to offer a sleek frictionless experience to validate mach
 
 ## How it Works
 
-The tool uses [Terraform](https://terraform.io/) to launch a virtual instance in the corresponding cloud provider using the specified image candidate.  Once the virtual instance is running, the audit script and a set of ignored controls are uploaded to the virtual instance.  The audit script (described below) is executed and every failing control is recorded as either **FAILED** or **SKIPPED** (if the control was specified as an ignored control).  Once the audit script execution has completed, Terraform is used to destroy the provisioned virtual instance.
+The tool uses [Terraform](https://terraform.io/) to launch a virtual instance in the specified cloud provider using the specified image candidate.  Once the virtual instance is running, the audit script and a set of ignored controls are uploaded to the virtual instance.  The audit script (described below) is executed and every failing control is recorded as either **FAILED** or **SKIPPED** (if the control was specified as an ignored control).  Once the audit script execution has completed, Terraform is used to destroy the provisioned virtual instance.
 
 ## Audit Script
 
@@ -27,6 +27,7 @@ Currently, Google Cloud Platform is the only supported cloud provider. Amazon We
 Usage information for supported cloud providers is further documented in cloud provider specific READMEs.
 
 * [gcp](./terraform/gcp/README.md) - Google Cloud Platform
+* [aws](./terraform/aws/README.md) - Amazon Web Services
 
 ## Usage
 

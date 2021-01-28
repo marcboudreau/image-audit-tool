@@ -6,8 +6,6 @@ COPY --from=hashicorp/terraform:0.14.4 /bin/terraform /bin/terraform
 
 COPY ./terraform /terraform
 
-WORKDIR /terraform
-
 COPY ./verify/audit.sh /verify/audit.sh
 
 COPY ./entrypoint.sh /bin/entrypoint.sh

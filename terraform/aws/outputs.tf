@@ -1,8 +1,7 @@
 ################################################################################
 #
-# Google Cloud Platform
-#   This project is used to launch a preemptible GCE Instance to test a GCE
-#   Image.
+# Amazon Web Services
+#   This project is used to launch an AWS EC2 Instance to test an AMI.
 #
 # outputs.tf
 #   This file defines the output variables for the project.
@@ -10,8 +9,8 @@
 ################################################################################
 
 output "instance_ip" {
-    description = "The ephmeral IP address assigned to the launched GCE Instance."
-    value       = google_compute_instance.test.network_interface[0].access_config[0].nat_ip
+    description = "The public IP address of the Spot Instance launched to test the AMI."
+    value       = aws_spot_instance_request.test.public_ip
 }
 
 output "ssh_username" {

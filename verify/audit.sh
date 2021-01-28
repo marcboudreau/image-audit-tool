@@ -186,7 +186,7 @@ function report {
 # 1.6.2
 (
     [ "$(sysctl kernel.randomize_va_space)" = "kernel.randomize_va_space = 2" ]
-    grep -q '^\s*kernel\.randomize_va_space\s*=2\s*$' /etc/sysctl.conf /etc/sysctl.d/*
+    grep -q '^\s*kernel\.randomize_va_space\s*=\s*2\s*$' /etc/sysctl.conf /etc/sysctl.d/*
 ) || report "1.6.2"
 
 # 1.6.3

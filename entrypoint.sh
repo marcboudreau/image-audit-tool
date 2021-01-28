@@ -78,9 +78,9 @@ if [ ! -d /terraform/$cloud ]; then
     echo "Error: the specified cloud provider $cloud is not supported by this tool."
     exit 1
 fi
+cd /terraform/$cloud
 
-export TF_VAR_image_cloud=$cloud
-export TF_VAR_image_identifier=${2:?"Error: an image identifier must be provided."}
+export TF_VAR_image_id=${2:?"Error: an image identifier must be provided."}
 
 ignored_controls=${3:-}
 

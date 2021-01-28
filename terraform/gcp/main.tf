@@ -1,18 +1,31 @@
 ################################################################################
 #
-# Google Cloud Platform module
-#   This module is used to launch a GCE Instance to test a GCE
+# Google Cloud Platform
+#   This project is used to launch a preemptible GCE Instance to test a GCE
 #   Image.
 #
 # main.tf
-#   This file defines the resources for the module.
+#   This file defines the resources for the project.
 #
 ################################################################################
+
+terraform {
+  backend "local" {
+  }
+}
+
+provider "google" {
+}
+
+locals {
+    default_machine_type = "n1-standard-1"
+    default_network_name = "default"
+}
 
 resource "google_compute_instance" "test" {
     boot_disk {
       initialize_params {
-          image = var.image_name
+          image = var.image_id
       }
     }
 

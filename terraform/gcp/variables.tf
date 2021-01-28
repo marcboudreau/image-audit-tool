@@ -1,9 +1,15 @@
-locals {
-    default_machine_type = "n1-standard-1"
-    default_network_name = "default"
-}
+################################################################################
+#
+# Google Cloud Platform
+#   This project is used to launch a preemptible GCE Instance to test a GCE
+#   Image.
+#
+# variables.tf
+#   This file defines the variables for the project.
+#
+################################################################################
 
-variable "image_name" {
+variable "image_id" {
     description = "The specific name of a GCE Image to use as the boot disk image for the launched GCE Instance."
     type        = string
 }
@@ -19,7 +25,7 @@ variable "zone" {
     type = string
 }
 
-variable "network_name" {
+variable "vpc_identifier" {
     description = "The name of the GCP network in which the GCE Instance is launched."
     type        = string
     default     = "default"

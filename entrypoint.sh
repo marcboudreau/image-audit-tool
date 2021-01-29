@@ -14,6 +14,8 @@ function print_usage {
     echo "  <cloud>             The canonical name of the cloud provider where the"
     echo "                      candidate image exists."
     echo "  <image_identifier>  The unique identifier for the candidate image to test."
+    echo "  <test_script>       The test script to execute for the audit. This must be"
+    echo "                      the test script filename."
     echo "  <ignored_controls>  Optional. A comma-separated list of control numbers to"
     echo "                      ignore if they fail."
     echo "                      e.g. 1.1,2.3.4,3.1.1"
@@ -82,7 +84,12 @@ cd /terraform/$cloud
 
 export TF_VAR_image_id=${2:?"Error: an image identifier must be provided."}
 
-ignored_controls=${3:-}
+test_script=${3:?"Error: a test script must be specified."}
+ignored_controls=${4:-}
+generate_exceptions_file=
+if [ $ignored_controls ]; then
+    generate_exceptions_file="echo '"$ignored_controls"' | sed 's/,/\n/g' > /tmp/exceptions; "
+fi
 
 export TF_VAR_instance_location=${CLOUD_LOCATION:?"Error: an appropriate cloud provider location must be provided via the CLOUD_LOCATION environment variable."}
 export TF_VAR_vpc_identifier=${VPC_IDENTIFIER-""}
@@ -110,19 +117,12 @@ exit_code=0
     # Blocks execution until the SSH port is ready on the specified IP address.
     ssh_ready $ip_address ${SSH_PORT:-"22"} || exit 1
 
-    # Upload audit.sh and /tmp/verify.env
+    # Upload audit.sh and test script.
     scp -q -i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /verify/audit.sh "$ssh_username@$ip_address:/tmp/audit.sh"
+    scp -q -i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /verify/$test_script "$ssh_username@$ip_address:/tmp/testscript"
 
-    if [ -f /tmp/exceptions ]; then
-        scp -q -i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /tmp/exceptions "$ssh_username@$ip_address:/tmp/exceptions"
-    fi
-
-    # Adjust permissions and ownership of the audit.sh file and run it.
-    ssh -i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o LogLevel=ERROR "$ssh_username@$ip_address" "sudo chmod 0755 /tmp/audit.sh"
-    ssh -i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o LogLevel=ERROR "$ssh_username@$ip_address" "sudo chown root:root /tmp/audit.sh"
-
-    # Run the audit.sh script
-    ssh -i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o LogLevel=ERROR "$ssh_username@$ip_address" "sudo bash /tmp/audit.sh" || exit 1
+    # Establish SSH connection to configure file permissions and execute audit.
+    ssh -i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o LogLevel=ERROR "$ssh_username@$ip_address" "sudo bash -c '${generate_exceptions_file}chmod +x /tmp/audit.sh; /tmp/audit.sh /tmp/testscript'" || exit 1
 ) || exit_code=1
 
 terraform destroy -auto-approve || true

@@ -2,21 +2,21 @@
 
 This tool is used to audit a cloud provider machine image for compliance with an audit script.
 
-The tool is dockerized to offer a sleek frictionless experience to validate machine images.
+The tool provides the ability to temporarily launch and subsequently destroy a virtual instance with a given cloud provider machine image, and a framework for running test scripts to audit compliance.
 
-## How it Works
+## Launching Virtual Instance
 
-The tool uses [Terraform](https://terraform.io/) to launch a virtual instance in the specified cloud provider using the specified image candidate.  Once the virtual instance is running, the audit script and a set of ignored controls are uploaded to the virtual instance.  The audit script (described below) is executed and every failing control is recorded as either **FAILED** or **SKIPPED** (if the control was specified as an ignored control).  Once the audit script execution has completed, Terraform is used to destroy the provisioned virtual instance.
+The tool uses [Terraform](https://terraform.io/) to launch a virtual instance in the specified cloud provider using the specified image candidate.  Once the virtual instance is running, the audit script is executed. Once the audit script execution has completed, Terraform is used to destroy the provisioned virtual instance.
 
 ## Audit Script
 
-Currently, the tool only offers the CIS Ubuntu Linux 20.04 LTS Benchmark as an audit script. The design of the tool could easily be modified to support different audit scripts.
+The tool is designed to support many different test scripts, though currently the only supported test script is the **CIS Ubuntu Linux 20.04 LTS Benchmark - Level 1**.
 
-The audit script executes a series of tests organized as controls.  When the tests of a control all pass, no output is produced. When a test in a control fails, the control is marked as **FAILED** or **SKIPPED** if that control was marked as an ignored control in the exceptions file.
+The audit script executes the test script, which is a series of tests.
 
 ## Exceptions
 
-The tested image is most likely not able to meet every single control in the audit script. A set of control numbers to ignore can be specified when invoking the tool. 
+The tested image might not be able to pass every single control in the test script. The tool provides a mechanism for specifying exceptions, which is a set of test identifiers to ignore. While executing the test script, if a test specified as an exception fails, it is simply marked as **SKIPPED**.
 
 ## Supported Platforms
 

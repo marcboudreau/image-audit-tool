@@ -20,7 +20,7 @@ variable "machine_type" {
     default     = ""
 }
 
-variable "zone" {
+variable "instance_location" {
     description = "The availability zone where the GCE Instance is launched."
     type = string
 }

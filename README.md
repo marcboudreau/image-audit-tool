@@ -39,7 +39,8 @@ The following two command arguments must always be provided regardless of the ta
 
 * `<cloud>` - The canonical name of the cloud provider
 * `<image_identifier>` - The unique identifier for the machine image being tested
-8 `<ignored_controls>` - (Optional) A comma-separated list of control numbers to ignore failures
+* `<test_script>` - 
+* `<ignored_controls>` - (Optional) A comma-separated list of control numbers to ignore failures
 
 ### Environment Variables
 
@@ -68,7 +69,7 @@ Disecting the above command, we find...
 * `--rm` - Automatically removes the container after it is stopped
 * `-v $HOME/.config/gcloud:/root/.config/gcloud:ro` - Mounts the host's `$HOME/.config/gcloud` directory as a read-only volume in the container at `/root/.config/gcloud`
 * `-e CLOUD_LOCATION=us-central1-a` - Sets the value `us-central1-a` to the environment variable `CLOUD_LOCATION` in the container
-* `-e TF_VAR_gcp_project=my-gcp-project` - Sets the value `my-gcp-project` to the environment variable `TF_VAR_gcp_project` in the container
+* `-e TF_VAR_project=my-gcp-project` - Sets the value `my-gcp-project` to the environment variable `TF_VAR_project` in the container
 * `marcboudreau/image-audit-tool:0.1.0` - Specifies the Docker image to use for the container
 * `gcp` - The target cloud provider
 * `my-image` - The unique image identifier

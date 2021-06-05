@@ -1,3 +1,6 @@
 **README.md
 Dockerfile
 .git/
+.github/
+terraform/
+test-images/

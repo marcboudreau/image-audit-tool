@@ -30,11 +30,11 @@ resource "google_compute_instance" "test" {
     }
 
     machine_type = coalesce(var.machine_type, local.default_machine_type)
-    name         = "cis-test-${var.image_name}"
-    zone         = var.zone
+    name         = "cis-test-${var.image_id}"
+    zone         = var.instance_location
 
     network_interface {
-        network = coalesce(var.network_name, local.default_network_name)
+        network = coalesce(var.vpc_identifier, local.default_network_name)
 
         access_config {}
     }
